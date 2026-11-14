@@ -20,7 +20,7 @@ const readJsonBody = async (req: IncomingMessage): Promise<unknown> => {
 
 const setCorsHeaders = (res: ServerResponse): void => {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, mcp-session-id, mcp-protocol-version')
 }
 
@@ -35,17 +35,29 @@ export const startHttpServer = async (
   const httpServer = createServer(async (req, res) => {
     setCorsHeaders(res)
 
+    const url = new URL(req.url ?? '/', getBaseUrl(req))
+    res.on('finish', () => {
+      if (url.pathname !== '/health' && url.pathname !== '/healthz') {
+        console.error(`${req.method ?? 'UNKNOWN'} ${url.pathname} -> ${String(res.statusCode)}`)
+      }
+    })
+
     if (req.method === 'OPTIONS') {
       res.writeHead(204)
       res.end()
       return
     }
 
-    const url = new URL(req.url ?? '/', getBaseUrl(req))
-
-    if (req.method === 'GET' && (url.pathname === '/health' || url.pathname === '/healthz' || url.pathname === '/')) {
+    if (
+      (req.method === 'GET' || req.method === 'HEAD') &&
+      (url.pathname === '/health' || url.pathname === '/healthz' || url.pathname === '/')
+    ) {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-      res.end(JSON.stringify({ service: 'fitdays-mcp-server', status: 'ok' }))
+      if (req.method === 'HEAD') {
+        res.end()
+      } else {
+        res.end(JSON.stringify({ service: 'fitdays-mcp-server', status: 'ok' }))
+      }
       return
     }
 
