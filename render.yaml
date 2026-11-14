@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: fitdays-mcp-server
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: FITDAYS_EMAIL
+        sync: false
+      - key: FITDAYS_PASSWORD
+        sync: false
+      - key: FITDAYS_REGION
+        value: us
+      - key: FITDAYS_TIMEZONE
+        value: America/Chicago
+      - key: MCP_AUTH_PASSWORD
+        sync: false
+      - key: MCP_TOKEN_SECRET
+        generateValue: true
