@@ -20,6 +20,16 @@ export class FitDaysSession {
     if (!force && this.cache && now - this.cache.fetchedAt < SYNC_TTL_MS) {
       return this.cache.data
     }
+
+    try {
+      return await this.fetchAndCache(now)
+    } catch {
+      this.client = null
+      return await this.fetchAndCache(Date.now())
+    }
+  }
+
+  private fetchAndCache = async (now: number): Promise<SyncFromServerData> => {
     const client = await this.getClient()
     const res = await client.syncAll()
     if (!res.data) {
